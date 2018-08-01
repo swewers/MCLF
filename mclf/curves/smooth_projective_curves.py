@@ -116,6 +116,8 @@ class SmoothProjectiveCurve(SageObject):
 
     def __init__(self, F, k=None, assume_regular=False):
 
+        from sage.all import NumberFields
+        from mclf.curves.curves_over_number_fields import CurveOverNumberField
         self._function_field = F
 
         if k != None:
@@ -136,6 +138,8 @@ class SmoothProjectiveCurve(SageObject):
         else:
             self._field_of_constants_degree = self.field_of_constants_degree()
         self.compute_separable_model()
+        if self.constant_base_field() in NumberFields():
+            self.__class__ = CurveOverNumberField
 
 
     def __repr__(self):
