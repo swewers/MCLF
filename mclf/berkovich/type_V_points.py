@@ -3,7 +3,6 @@ r""" Points of type V on the Berkovich line.
 
 
 """
-
 #*****************************************************************************
 #       Copyright (C) 2017 Stefan Wewers <stefan.wewers@uni-ulm.de>
 #
@@ -119,6 +118,16 @@ class TypeVPointOnBerkovichLine(SageObject):
         sage: TypeVPointOnBerkovichLine(xi4, xi3)
         Point of type V given by residue class v(x/(2*x + 1)) > -5
 
+    The following example shows that the minor valuation is computed correctly ::
+
+        sage: xi5 = X.point_from_discoid(1/x,1)
+        sage: eta = TypeVPointOnBerkovichLine(xi0,xi5)
+        sage: eta
+        Point of type V given by residue class v(1/x) > 0
+        sage: eta.minor_valuation()
+        Valuation at the infinite place
+
+
     """
 
     def __init__(self, xi0, xi1):
@@ -154,6 +163,8 @@ class TypeVPointOnBerkovichLine(SageObject):
                 # now self represents an open discoid in the complement
                 # of the closed unit disk
                 phi_pol = v0.equivalence_decomposition(v1.phi())[0][0]
+                # this is pure guesswork; it is not clear whether v0
+                # and  v1 are defined on the same polynomial subring of F
                 self._phi_pol = phi_pol
                 phib = normalized_reduction(v0, phi_pol)
                 self._vb = k_v.valuation(phib(k_v.gen()))
@@ -233,7 +244,22 @@ class TypeVPointOnBerkovichLine(SageObject):
         return self._v
 
     def minor_valuation(self):
-        return self._vb
+        # return self._vb
+        # let's override this
+
+        f, s = self.open_discoid()
+        v = self.major_valuation()
+        Fb = self._vb.domain()
+        pi = self.X().base_valuation().uniformizer()
+        assert v(pi) == 1
+        s = v(f)
+        fb = Fb(v.reduce(f**s.denominator()/pi**s.numerator()))
+        if fb.numerator().degree() > 0:
+            vb = Fb.valuation(fb.numerator().factor()[0][0])
+        else:
+            vb = Fb.valuation(1/Fb.gen())
+        return vb
+
 
     def is_in_residue_class(self, xi):
         r""" Test whether ``xi`` lies in the residue class of ``self``.

@@ -683,8 +683,13 @@ class AffinoidDomainOnBerkovichLine(SageObject):
             if not T1._is_in_affinoid:
                 eta1 = TypeVPointOnBerkovichLine(xi0, T1.root())
                 psi1 = eta1.minor_valuation().uniformizer()
-                assert psi1.denominator().is_one(), "psi1 is not a polynomial"
-                psi = psi * Rb(psi1.numerator())
+                # this causes an error if psi1 = 1/x
+                # but even if it doesn' there is no guarantee whether
+                # it is correct.
+                # assert psi1.denominator().is_one(), "psi1 is not a polynomial"
+                # changed this into:
+                if psi1.denominator().is_one():
+                    psi = psi * Rb(psi1.numerator())
         phib = irreducible_polynomial_prime_to(psi)
         phi = v0.lift_to_key(phib)
         if xi0.is_in_unit_disk():
