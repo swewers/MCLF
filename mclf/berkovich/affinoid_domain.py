@@ -56,13 +56,11 @@ TO DO:
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
-#                  http://www.gnu.org/licenses/
+#                  https://www.gnu.org/licenses/
 #*****************************************************************************
 
 
 from sage.all import SageObject, Infinity
-from mclf.berkovich.berkovich_line import BerkovichLine, TypeIPointOnBerkovichLine,\
-                                          TypeIIPointOnBerkovichLine
 from mclf.berkovich.type_V_points import TypeVPointOnBerkovichLine
 from mclf.berkovich.berkovich_trees import BerkovichTree
 
@@ -99,7 +97,7 @@ class AffinoidTree(BerkovichTree):
         sage: xi1 = X.point_from_discoid(x^2+2, 3/2)
         sage: xi2 = X.point_from_discoid(x^4+2, 3/2)
         sage: xi3 = X.point_from_discoid(x^2+x+1, 1)
-        sage: xi4 = X.point_from_discoid(x^2+2, 2, False)
+        sage: xi4 = X.point_from_discoid(x^2+2, 1)
 
         sage: U1 = AffinoidTree(X)
         sage: U1 = U1.add_points([xi0], [xi1, xi3])
@@ -432,7 +430,7 @@ class AffinoidTree(BerkovichTree):
             sage: xi0 = X.gauss_point()
             sage: xi1 = X.point_from_discoid(x+1, 1)
             sage: xi2 = X.point_from_discoid(x+1, 2)
-            sage: xi3 = X.point_from_discoid(2+x, 1, in_unit_disk=False)
+            sage: xi3 = X.point_from_discoid(1/x, 1)
 
             sage: U = AffinoidTree(X)
             sage: U = U.add_points([xi0, xi2], [xi1, xi3])
@@ -670,12 +668,36 @@ class AffinoidDomainOnBerkovichLine(SageObject):
             sage: U.point_close_to_boundary(xi0)
             Point of type I on Berkovich line given by x + 2 = 0
 
+        At the moment, our choice of point close to the boundary is not
+        optimal, as the following example shows: ::
+
+            sage: U = RationalDomainOnBerkovichLine(X, 2/(x^2+x+1))
+            sage: U
+            Affinoid with 1 components:
+            Elementary affinoid defined by
+            v(1/(x^2 + x + 1)) >= -1
+
+            sage: xi0 = U.boundary()[0]
+            sage: U.point_close_to_boundary(xi0)
+            Point of type I on Berkovich line given by x^2 + 3*x + 1 = 0
+
+        The point at infinity is also inside U and 'close to the boundary',
+        and has smaller degree than the point produced above.
+
+        .. TODO::
+
+            Use a better strategie to find a point of minimal degree.
+
         """
         U = self
         T = U._T
         X = U.berkovich_line()
+        F = X.function_field()
+        x = F.gen()
         T0 = T.find_point(xi0)
         assert T0 != None and T0._is_in_affinoid, "xi0 is not a boundary point"
+        # we only look for point of type I which are larger than xi0
+        # but it may be possibleto find other points with smaller degree
         v0 = xi0.pseudovaluation_on_polynomial_ring()
         Rb = v0.residue_ring()
         psi = Rb.one()
@@ -683,14 +705,19 @@ class AffinoidDomainOnBerkovichLine(SageObject):
             if not T1._is_in_affinoid:
                 eta1 = TypeVPointOnBerkovichLine(xi0, T1.root())
                 psi1 = eta1.minor_valuation().uniformizer()
-                assert psi1.denominator().is_one(), "psi1 is not a polynomial"
-                psi = psi * Rb(psi1.numerator())
+                if psi1.denominator().is_one():
+                    psi = psi * Rb(psi1.numerator())
         phib = irreducible_polynomial_prime_to(psi)
         phi = v0.lift_to_key(phib)
-        xi1 = X.point_from_discoid(phi, Infinity, xi0.is_in_unit_disk())
+        if xi0.is_in_unit_disk():
+            xi1 = X.point_from_discoid(phi, Infinity)
+        else:
+            if phi == x:
+                xi1 = X.point_from_discoid(1/x, Infinity)
+            else:
+                xi1 = X.point_from_discoid(phi(1/x)*x**phi.degree(), Infinity)
         assert U.is_contained_in(xi1), "error: xi1 is not contained in U"
         return xi1
-
 
 
 class ClosedUnitDisk(AffinoidDomainOnBerkovichLine):
@@ -882,7 +909,7 @@ class RationalDomainOnBerkovichLine(AffinoidDomainOnBerkovichLine):
             if xi1_in != xi2_in:
                 # there must be a point between xi1 and xi2 where v(f)=0
                 # which we have to add to the in_list
-                xi3 = xi1._X.find_zero(xi1, xi2, f)
+                xi3 = xi1.berkovich_line().find_zero(xi1, xi2, f)
                 assert xi3.v(f) == 0, "got the wrong value for t!"
                 in_list.append(xi3)
             U = U.add_points(in_list, out_list)

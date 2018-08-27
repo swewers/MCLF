@@ -46,12 +46,10 @@ TO DO:
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
-#                  http://www.gnu.org/licenses/
+#                  https://www.gnu.org/licenses/
 #*****************************************************************************
 
-
-from sage.all import SageObject, ZZ, QQ, NumberField, PolynomialRing, Polynomial, Infinity, GaussValuation
-from mclf.padic_extensions.fake_padic_completions import FakepAdicCompletion
+from sage.all import SageObject, PolynomialRing, Infinity, GaussValuation
 from sage.rings.valuation.limit_valuation import MacLaneLimitValuation, LimitValuation
 
 

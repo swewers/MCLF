@@ -43,14 +43,10 @@ TO DO:
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
-#                  http://www.gnu.org/licenses/
+#                  https://www.gnu.org/licenses/
 #*****************************************************************************
 
-
-from sage.all import SageObject, NumberField, PolynomialRing, Polynomial, ZZ, QQ, mod, cached_method, Infinity, sgn, ceil, randint, prod, lcm
-from sage.geometry.newton_polygon import NewtonPolygon
-from mclf.padic_extensions.fake_padic_completions import FakepAdicCompletion
-from mclf.padic_extensions.fake_padic_embeddings import FakepAdicEmbedding
+from sage.all import SageObject, ZZ
 
 
 class FakepAdicExtension(SageObject):

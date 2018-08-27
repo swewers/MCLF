@@ -23,16 +23,10 @@ TO DO:
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
-#                  http://www.gnu.org/licenses/
+#                  https://www.gnu.org/licenses/
 #*****************************************************************************
 
-
-from sage.all import SageObject, ZZ, QQ, NumberField, PolynomialRing, Polynomial, Integer, matrix, zero_matrix, identity_matrix, IntegerModRing, mod, Infinity, sgn, ceil, floor, prod, lcm, vector
-from sage.geometry.newton_polygon import NewtonPolygon
-  
-
-
-#------------------------------------------------------------------------------
+from sage.all import SageObject
 
 
 class ElementOfFakepAdicCompletion(SageObject):

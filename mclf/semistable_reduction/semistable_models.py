@@ -135,14 +135,10 @@ three of genus `1`. ::
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
-#                  http://www.gnu.org/licenses/
+#                  https://www.gnu.org/licenses/
 #*****************************************************************************
 
-from sage.all import SageObject, PolynomialRing, FunctionField, GaussValuation, cached_method, Infinity, floor
-from mclf.berkovich.berkovich_line import *
-from mclf.berkovich.affinoid_domain import *
-from mclf.curves.smooth_projective_curves import SmoothProjectiveCurve
-from mclf.semistable_reduction.reduction_trees import ReductionTree
+from sage.all import SageObject
 from mclf.curves.superelliptic_curves import SuperellipticCurve
 
 
@@ -157,6 +153,7 @@ class SemistableModel(SageObject):
 
     - ``Y`` -- a smooth projective curve
     - ``vK`` -- a discrete valuation on the base field `K` of `Y`
+    - ``check`` -- a boolean (default: ``True``)
 
     Instantiation of this class actually creates an instant of a suitable subclass,
     which represents the kind of curve for which an algorithm for computing the
@@ -171,6 +168,8 @@ class SemistableModel(SageObject):
     - If `Y` is a superelliptic curve of degree `p`, where `p` is the residue
       characteristic of `v_K` and `K` has characteristic `0` then the subclass
       ``SuperpModel`` is invoked.
+    - if none of the above holds, then we either raise a NotImplementedError
+      (if ``check=True``) or we create an ``AdmissibleModel`` (if ``check=False``)
 
     EXAMPLES::
 
@@ -181,6 +180,8 @@ class SemistableModel(SageObject):
         sage: FY.<y> = FX.extension(y^3 - y^2 + x^4 + x + 1)
         sage: Y = SmoothProjectiveCurve(FY)
         sage: YY = SemistableModel(Y, v_5)
+        sage: YY
+        semistable model of the smooth projective curve with Function field in y defined by y^3 - y^2 + x^4 + x + 1, with respect to 5-adic valuation
 
     The degree of `Y` as a cover of the projective line is `4`, which is strictly
     less than `p=5`. Hence `Y` has admissible reduction and we have created an instance
@@ -197,7 +198,7 @@ class SemistableModel(SageObject):
         [the smooth projective curve with Function field in y defined by y^3 + 4*y^2 + x^4 + x + 1]
 
     """
-    def __init__(self, Y, vK):
+    def __init__(self, Y, vK, check=True):
 
         from mclf.semistable_reduction.admissible_reduction import AdmissibleModel
         from mclf.semistable_reduction.superp_models import SuperpModel
@@ -208,7 +209,7 @@ class SemistableModel(SageObject):
             # we create an instance of ``SuperpModel``
             self.__class__ = SuperpModel
             SuperpModel.__init__(self, Y, vK)
-        elif p==0 or p.gcd(Y.covering_degree()) == 1:
+        elif p==0 or p.gcd(Y.covering_degree()) == 1 or not check:
             # we create an instance of ``AdmissibleModel``
             self.__class__ = AdmissibleModel
             AdmissibleModel.__init__(self, Y, vK)
@@ -216,28 +217,32 @@ class SemistableModel(SageObject):
             raise NotImplementedError
 
 
+    def __repr__(self):
+        return "semistable model of %s, with respect to %s"%(self.curve(), self.base_valuation())
+
+
     def curve(self):
         """
         Return the curve.
 
         """
-        return self._Y
+        return self._curve
 
 
-    def base_field(self):
+    def constant_base_field(self):
         """
-        Return the base field of this curve.
+        Return the constant base field of this curve.
 
         """
-        self._Y.base_field()
+        return self.curve().constant_base_field()
 
 
     def base_valuation(self):
         """
-        Return the valuation on the base field of the curve.
+        Return the valuation on the constant base field of the curve.
 
         """
-        return self._vK
+        return self._base_valuation
 
 
     def reduction_tree(self):
@@ -314,7 +319,7 @@ class SemistableModel(SageObject):
         """
         components = []
         for Z in self.reduction_tree().inertial_components():
-            components += [W.curve() for W in Z.upper_components()]
+            components += [W.component() for W in Z.upper_components()]
         return components
 
 
@@ -330,6 +335,19 @@ class SemistableModel(SageObject):
     def conductor_exponent(self):
         r"""
         Return the conductor exponent at p of this curve.
+
+        EXAMPLES
+
+        In this example the conductor exponent was computed wrongly in a
+        previous version::
+
+            sage: from mclf import *
+            sage: R.<x> = QQ[]
+            sage: f = x^4+2*x^3+2*x^2+x
+            sage: Y = SuperellipticCurve(f, 3)
+            sage: Y3 = SemistableModel(Y, QQ.valuation(3))
+            sage: Y3.conductor_exponent()
+            11
 
         """
         return self.reduction_tree().reduction_conductor()

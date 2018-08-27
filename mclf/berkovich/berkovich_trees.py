@@ -42,13 +42,10 @@ EXAMPLES::
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
-#                  http://www.gnu.org/licenses/
+#                  https://www.gnu.org/licenses/
 #*****************************************************************************
 
-
 from sage.all import SageObject, Graph
-from mclf.berkovich.berkovich_line import BerkovichLine
-
 
 
 class BerkovichTree(SageObject):
@@ -193,7 +190,7 @@ class BerkovichTree(SageObject):
 
     def copy(self):
         r""" Return a copy of self."""
-
+        from copy import copy
         T = copy(self)
         children = []
         for child in self.children():
@@ -504,17 +501,21 @@ def component_jumps(xi0, xi1):
     from sage.geometry.newton_polygon import NewtonPolygon
     from mclf.berkovich.berkovich_line import valuations_from_inequality
     from sage.rings.polynomial.polynomial_ring_constructor import PolynomialRing
-
+    from mclf.berkovich.berkovich_line import TypeIIPointOnBerkovichLine
+    
     assert xi0.is_leq(xi1), "xi0 has to be an ancestor of xi1"
     X = xi0.berkovich_line()
     vK = X.base_valuation()
 
     v0 = xi0.pseudovaluation_on_polynomial_ring()
     v1 = xi1.pseudovaluation_on_polynomial_ring()
+    y = xi1.parameter()
     if hasattr(v1, "phi"):
         phi = v1.phi()
+        # v1 is an inductive valuation
     else:
         phi = v1._G
+        # v1 is a limit valuation
     assert v0(phi) < v1(phi), "xi0 is not an ancestor of xi1!"
     R = phi.parent()
     x = R.gen()
@@ -522,9 +523,6 @@ def component_jumps(xi0, xi1):
     T = S.gen()
     G = phi(x+T)
     NP = NewtonPolygon([(i, v1(G[i])) for i in range(G.degree()+1)])
-    # print("phi = ", phi)
-    # print("G = ", G)
-    # print("NP = ", NP)
     V = []
     vertices =  NP.vertices()
     for k in range(len(vertices)-1):
@@ -533,10 +531,12 @@ def component_jumps(xi0, xi1):
         a0 = aj - j*(ai-aj)/(i-j)
         # print("a0 = ", a0)
         V += valuations_from_inequality(vK, phi, a0, v0)
-    # print("V = ", V)
+    ret = [TypeIIPointOnBerkovichLine(X, (v, y)) for v in V]
+    """
     if xi1.is_in_unit_disk():
         ret = [X.point_from_polynomial_pseudovaluation(v) for v in V]
     else:
         ret = [X.point_from_polynomial_pseudovaluation(v, in_unit_disk=False) for v in V]
+    """
     return [xi for xi in ret if (xi0.is_leq(xi) and xi.is_leq(xi1))]
     # the last 'if' is necessary if phi = v1._G above

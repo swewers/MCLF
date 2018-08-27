@@ -100,6 +100,22 @@ EXAMPLES::
     sage: YY.conductor_exponent()
     12
 
+We check that issues #39 and #40 have been fixed: ::
+
+    sage: v_2 = QQ.valuation(2)
+    sage: f =  x^5 - 5*x^4 + 3*x^3 - 3*x^2 + 4*x - 1
+    sage: Y = SuperellipticCurve(f, 2)
+    sage: Y2 = SemistableModel(Y, v_2)
+    sage: Y2.etale_locus()
+    Affinoid with 2 components:
+    Elementary affinoid defined by
+    v(x + 1) >= 2/3
+    Elementary affinoid defined by
+    v(x^4 + 4*x^2 + 4*x + 4) >= 8/3
+    sage: Y2.is_semistable()
+    True
+
+
 TO DO:
 
 - more doctests
@@ -114,19 +130,17 @@ TO DO:
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
-#                  http://www.gnu.org/licenses/
+#                  https://www.gnu.org/licenses/
 #*****************************************************************************
 
-from sage.all import SageObject, PolynomialRing, FunctionField, cached_method, Infinity, floor
-from mclf.berkovich.berkovich_line import *
-from mclf.berkovich.affinoid_domain import *
+from sage.all import PolynomialRing, FunctionField, floor, GaussValuation
+from mclf.berkovich.berkovich_line import BerkovichLine
+from mclf.berkovich.berkovich_trees import BerkovichTree
+from mclf.berkovich.affinoid_domain import RationalDomainOnBerkovichLine, ClosedUnitDisk
 from mclf.curves.smooth_projective_curves import SmoothProjectiveCurve
 from mclf.curves.superelliptic_curves import SuperellipticCurve
 from mclf.semistable_reduction.reduction_trees import ReductionTree
 from mclf.semistable_reduction.semistable_models import SemistableModel
-from mclf.curves.superelliptic_curves import SuperellipticCurve
-
-
 
 class SuperpModel(SemistableModel):
     r"""
@@ -171,7 +185,7 @@ class SuperpModel(SemistableModel):
         assert p == vK.residue_field().characteristic(), "the exponent p must be the residue characteristic of vK"
         assert not p.divides(f.degree()), "the degree of f must be prime to p"
         self._p = p
-        self._vK = vK
+        self._base_valuation = vK
         v0 = GaussValuation(R, vK)
         phi, psi, f1 = v0.monic_integral_model(f)
         # now f1 = phi(f).monic()
@@ -190,20 +204,20 @@ class SuperpModel(SemistableModel):
             self._FX = FX
             self._FY = FY
             Y = SmoothProjectiveCurve(FY)
-            self._Y = Y
+            self._curve = Y
         else:
             self._f = f.monic()
             self._a = vK.domain().one()
             self._FY = Y.function_field()
             self._FX = Y.rational_function_field()
-            self._Y = Y
+            self._curve = Y
         X = BerkovichLine(self._FX, vK)
         self._X = X
 
 
     def __repr__(self):
         return "semistable model of superelliptic curve Y: y^%s = %s over %s, with respect to %s"%(self._p,
-                        self._a*self._f, self._vK.domain(), self._vK)
+                        self._a*self._f, self.base_valuation().domain(), self.base_valuation())
 
 
     def etale_locus(self):
@@ -243,6 +257,7 @@ class SuperpModel(SemistableModel):
             v(1/x) >= -5/2
             v(x) >= 2
 
+
     .. NOTE::
 
         At the moment, the construction of the superelliptic curve `Y` requires that
@@ -263,7 +278,6 @@ class SuperpModel(SemistableModel):
         H, G = p_approximation_generic(f,p)
         # b = [FX(H[i]) for i in range(n+1)]
         c = [FX(G[k]) for k in range(n+1)]
-        d =[c[k]*f**k for k in range(n+1)]
         pl = 1
         while pl <= m:
             pl = pl*p
@@ -273,7 +287,7 @@ class SuperpModel(SemistableModel):
             a.append(a[i-1].derivative()/i)
         a = [a[i]/f for i in range(n+1)]
 
-        pi = self._vK.uniformizer()
+        pi = self.base_valuation().uniformizer()
         delta = [ c[pl]**(p-1) * pi**(-p) ]
         delta += [ c[pl]**(i*(p-1)) * a[i]**(-pl*(p-1)) * pi**(-i*p)
                    for i in range(1, n+1) ]
@@ -290,7 +304,7 @@ class SuperpModel(SemistableModel):
                 # if delta[i] is constant, it must not be integral
                 # otherwise we add the whole Berkovich line which is
                 # not an affinoid
-                assert self._vK(delta[i]) < 0, "this is not an affinoid"
+                assert self.base_valuation()(delta[i]) < 0, "this is not an affinoid"
                 # if vK(delta[i]) >= 0 then we add the empty set, i.e
                 # we do nothing
             else:
@@ -400,7 +414,6 @@ def p_approximation(f,p):
     """
 
     R = f.parent()
-    K = R.base_ring()
     x = R.gen()
     n = f.degree()
     r = floor(n/p)

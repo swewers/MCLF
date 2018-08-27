@@ -46,7 +46,7 @@ polygon with slope `s` is moved to a segment of slope `0` with ordinate `0`.
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
-#                  http://www.gnu.org/licenses/
+#                  https://www.gnu.org/licenses/
 #*****************************************************************************
 
 from sage.all import ZZ, GaussValuation
@@ -64,7 +64,7 @@ def slope_factors(f, vK, precision, reduce_function, slope_bound=0):
     - ``precision`` -- a positive integer
     - ``reduce_function`` -- a function which takes as input an element of `K`
       and returns a simpler approximation; the approximation is with relative
-      precision ``precsion``
+      precision ``precision``
     - ``slope_bound`` -- a rational number (default: `0`)
 
     OUTPUT: a dictionary ``F`` whose keys are the pairwise distinct slopes `s_i`
@@ -81,15 +81,31 @@ def slope_factors(f, vK, precision, reduce_function, slope_bound=0):
     If ``slope_bound`` is given, then only those factors with slope < ``slope_bound``
     are computed.
 
+    EXAMPLES::
+
+        sage: from mclf.padic_extensions.slope_factors import slope_factors
+        sage: from mclf.padic_extensions.fake_padic_completions import FakepAdicCompletion
+        sage: from sage.all import GaussValuation
+        sage: R.<x> = QQ[]
+        sage: v2 = QQ.valuation(2)
+        sage: Q2 = FakepAdicCompletion(QQ, v2)
+        sage: f = (x - 2)*(x + 4) + 2^8
+        sage: reduce_function = lambda g: Q2.reduce_polynomial(g, 5)
+        sage: F = slope_factors(f, v2, 3, reduce_function)
+        sage: F
+        {-2: x + 4, -1: x + 30}
+        sage: v = GaussValuation(R, v2)
+        sage: v(f - F[-2]*F[-1])
+        5
+
+
     """
     vK = vK.scale(1/vK(vK.uniformizer()))
     assert not f.is_constant(), "f must be nonconstant"
     assert f.is_monic(), "f must be monic"
     NP = NewtonPolygon([(i,vK(f[i])) for i in range(f.degree()+1)])
     slopes = NP.slopes(False)
-    vertices = NP.vertices()
     assert all( s <= 0 for s in slopes), "f must be integral"
-    pi = vK.uniformizer()
     F = {}
     for i in range(len(slopes)):
         s = slopes[i]
@@ -109,6 +125,9 @@ def factor_with_slope(f, vK, s, precision, reduce_function):
     - ``vK`` -- a discrete valuation on `K` such that `f` for which `f` is integral
     - ``s`` -- a nonpositive **integer**
     - ``precision`` -- a positive integer
+    - ``reduce_function`` -- a function which takes as input an element of `K`
+      and returns a simpler approximation; the approximation is with relative
+      precision ``precision``
 
     OUTPUT: a monic and integral polynomial `g` which approximates the factor
     of `f` with slope `s`. We assume that `s` is a slope of `f` (hence `g`)
@@ -135,9 +154,13 @@ def factor_with_slope_zero(f, vK, N, reduce_function):
     INPUT:
 
     - ``f`` -- a nonconstant polynomial over a field `K` (not necessarily monic)
-        whose reduction to the residue field of `v_K` is nonconstant.
+        which is integral wrt to `v_K` and whose reduction to the residue field of
+        `v_K` is nonconstant.
     - ``vK`` -- a normalized discrete valuation on `K` for which `f` is integral
     - ``N`` -- a positive integer
+    - ``reduce_function`` -- a function which takes as input an element of `K`
+      and returns a simpler approximation; the approximation is with relative
+      precision ``precision``
 
     OUTPUT: a pair `(f_1,f_2)` of polynomials such that `f_1` has slope zero,
     `f_2` has only nonzero slopes, and
@@ -146,9 +169,19 @@ def factor_with_slope_zero(f, vK, N, reduce_function):
 
             v_K( f - f_1\cdot f_2 ) > N.
 
+
+    EXAMPLES::
+
+        sage: from mclf.padic_extensions.slope_factors import factor_with_slope_zero
+        sage: R.<x> = QQ[]
+        sage: v2 = QQ.valuation(2)
+        sage: f = (2*x - 1)*(x + 1)
+        sage: reduce_function = lambda g: g
+        sage: factor_with_slope_zero(f, v2, 3, reduce_function)
+        x + 1
+
     """
     R = f.parent()
-    x = R.gen()
     pi = vK.uniformizer()
     v0 = GaussValuation(R, vK)
     Kb = vK.residue_field()
@@ -157,6 +190,8 @@ def factor_with_slope_zero(f, vK, N, reduce_function):
     gb = fb.shift(-k).monic()
     g = R([vK.lift(gb[i]) for i in range(gb.degree()+1)])
     q, r0 = f.quo_rem(g)
+    if r0.is_zero():  # we are done
+         return g
     qb = q.map_coefficients(lambda c:vK.reduce(c), Kb)
     assert qb != 0
     m = v0(r0)
@@ -196,7 +231,6 @@ def pol_linear_combination(f, g, h):
     and such that `deg(a) < deg(h)`.
 
     """
-    R = f.parent()
     d, A, B = g.xgcd(h)
     # now 1 = d = A*g + B*h
     C, a = (f*A).quo_rem(h)

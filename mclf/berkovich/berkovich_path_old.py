@@ -44,11 +44,10 @@ Moreover, kinks of this function can only occur in points of type II.
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
-#                  http://www.gnu.org/licenses/
+#                  https://www.gnu.org/licenses/
 #*****************************************************************************
 
-from sage.all import SageObject, cached_method, Infinity
-from mclf.berkovich.berkovich_line import BerkovichLine
+from sage.all import SageObject, Infinity
 from mclf.berkovich.type_V_points import TypeVPointOnBerkovichLine
 
 
@@ -212,13 +211,8 @@ class SimpleBerkovichPath(SageObject):
 
 
 def augmentation_list(xi0, xi1):
-
     assert xi0.is_leq(xi1)
-    aug_list = []
     phi1, s1, in_unit_disk = xi1.discoid_representation(xi0) 
-
-
-
 
 def next_kink(v, phi, f, start_at=None):
     r""" Return the first kink.

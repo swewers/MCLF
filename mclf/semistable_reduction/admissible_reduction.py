@@ -42,13 +42,11 @@ TO DO:
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
-#                  http://www.gnu.org/licenses/
+#                  https://www.gnu.org/licenses/
 #*****************************************************************************
 
-from sage.all import SageObject, PolynomialRing, FunctionField, cached_method, Infinity, floor
-from mclf.berkovich.berkovich_line import *
-from mclf.berkovich.affinoid_domain import *
-from mclf.curves.smooth_projective_curves import SmoothProjectiveCurve
+from mclf.berkovich.berkovich_line import BerkovichLine
+from mclf.berkovich.berkovich_trees import BerkovichTree
 from mclf.semistable_reduction.reduction_trees import ReductionTree
 from mclf.semistable_reduction.semistable_models import SemistableModel
 
@@ -105,9 +103,10 @@ class AdmissibleModel(SemistableModel):
         self._reduction_tree = reduction_tree
 
 
+    def __repr__(self):
+        return "semistable model of %s, with respect to %s"%(self.curve(), self.base_valuation())
+
+
     def original_model_of_curve(self):
         """ Return the original model of the curves. """
         return self._original_model_of_curve
-
-
-   

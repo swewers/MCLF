@@ -80,11 +80,11 @@ TO DO:
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
-#                  http://www.gnu.org/licenses/
+#                  https://www.gnu.org/licenses/
 #*****************************************************************************
 
 
-from sage.all import SageObject, ZZ, QQ, NumberField, GaussValuation, PolynomialRing, Polynomial, Integer, matrix, zero_matrix, identity_matrix, IntegerModRing, mod, Infinity, sgn, ceil, floor, prod, lcm, vector, GF
+from sage.all import SageObject, ZZ, QQ, NumberField, GaussValuation, PolynomialRing, Polynomial, Integer, matrix, IntegerModRing, mod, Infinity, prod, lcm, vector, GF
 from sage.geometry.newton_polygon import NewtonPolygon
 from sage.rings.valuation.limit_valuation import LimitValuation
 
@@ -307,8 +307,6 @@ class FakepAdicCompletion(SageObject):
         K0 = self.number_field()
         assert K0.has_coerce_map_from(f.parent().base_ring())
         f = f.change_ring(K0)
-        R = f.parent()
-        x = R.gen()
 
         vK = self.valuation()
         if embedding:
@@ -374,7 +372,6 @@ class FakepAdicCompletion(SageObject):
         pair `(L,\phi)` is returned, where `\phi:K\to L` is the canonical embedding.
 
         """
-        K0 = self.number_field()
         P = self.polynomial()
         x = P.parent().gen()
         if self.is_Qp():
@@ -436,9 +433,9 @@ class FakepAdicCompletion(SageObject):
         It is not clear to me whether a purely wild factor with inertia is better
         than a mixed unramified factor.
 
-        EXAMPLES::
+        EXAMPLES:
 
-            The following example created an error in a previous version:
+        The following example created an error in a previous version ::
 
             sage: from mclf import *
             sage: v_2 = QQ.valuation(2)
@@ -449,6 +446,11 @@ class FakepAdicCompletion(SageObject):
             sage: L.ramification_degree()
             4
 
+        Check that non-integral polynomials are allowed as well ::
+
+            sage: Q2.weak_splitting_field(2*x^2 + 1)
+            2-adic completion of Number Field in pi2 with defining polynomial x^2 + 2
+
         """
         if not isinstance(F, Polynomial):
             F = prod(F).radical()
@@ -458,7 +460,8 @@ class FakepAdicCompletion(SageObject):
         assert F.parent().base_ring() == QQ, "For the time being, F has to be defined over QQ"
         if F.is_constant():
             return K
-        p = K.p()
+        v0 = GaussValuation(F.parent(), self.valuation())
+        F = v0.monic_integral_model(F)[0](F).monic()
         first_step = True
         while True:
             g = K.approximate_irreducible_factor(F)
@@ -705,7 +708,6 @@ class FakepAdicCompletion(SageObject):
             if m == 1:
                 return [QQ.one()]
 
-            N = precision
             p = self.p()
             fb = GF(p**m, 'zeta').polynomial()
             f = fb.change_ring(self.number_field())
@@ -784,7 +786,6 @@ class FakepAdicCompletion(SageObject):
         """
         R = f.parent()
         x = R.gen()
-        p = self.p()
         assert R.base_ring() == self.number_field(), "f must be defined over K"
         # first we see if we can normalize f such that the unique slope of the
         # Newton polygon is >-1 and <=0.
@@ -917,7 +918,6 @@ class FakepAdicCompletion(SageObject):
         K = self.number_field()
         assert K.has_coerce_map_from(f.parent().base_ring())
         f = f.change_ring(K)
-        n = f.degree()
         vK = self.valuation()
         V = vK.mac_lane_approximants(f, assume_squarefree=True, require_maximal_degree=True)
         if only_ramified_factors:
@@ -1059,7 +1059,6 @@ class FakepAdicCompletion(SageObject):
         the absolute characteristic polynomial of a root of `f`, modulo `p^N`.
 
         """
-        from sage.combinat.cartesian_product import CartesianProduct_iters
         # construct the rational representation of a(formal) root alpha of f
         m = f.degree()
         K = self.number_field()

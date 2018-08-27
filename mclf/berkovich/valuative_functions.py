@@ -59,10 +59,10 @@ EXAMPLES::
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 2 of the License, or
 # (at your option) any later version.
-#                  http://www.gnu.org/licenses/
+#                  https://www.gnu.org/licenses/
 #*****************************************************************************
 
-from sage.all import SageObject, cached_method, Infinity
+from sage.all import SageObject
 
 
 class ValuativeFunction(SageObject):
